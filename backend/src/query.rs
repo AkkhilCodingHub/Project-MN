@@ -39,9 +39,23 @@ pub struct SourceInfo {
     pub page: i32,
 }
 
-pub async fn query_handler(
+pub async fn query_get_handler(
+    State(state): State<QueryState>,
+    axum::extract::Query(payload): axum::extract::Query<QueryRequestPayload>,
+) -> impl IntoResponse {
+    query_core(state, payload).await
+}
+
+pub async fn query_post_handler(
     State(state): State<QueryState>,
     Json(payload): Json<QueryRequestPayload>,
+) -> impl IntoResponse {
+    query_core(state, payload).await
+}
+
+async fn query_core(
+    state: QueryState,
+    payload: QueryRequestPayload,
 ) -> impl IntoResponse {
     let user_id = match Uuid::parse_str(&payload.user_id) {
         Ok(uuid) => uuid,

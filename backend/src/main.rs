@@ -8,7 +8,7 @@ mod tools;
 mod payment;
 
 use axum::{
-    routing::post,
+    routing::{get, post},
     Router,
     extract::FromRef,
 };
@@ -100,9 +100,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 5. Build Router & bind endpoints
     let app = Router::new()
         .route("/api/ingest", post(ingest::ingest_handler))
-        .route("/api/query", post(query::query_handler))
-        .route("/api/quiz", post(tools::quiz_handler))
-        .route("/api/flashcards", post(tools::flashcards_handler))
+        .route("/api/query", get(query::query_get_handler).post(query::query_post_handler))
+        .route("/api/quiz", get(tools::quiz_get_handler).post(tools::quiz_post_handler))
+        .route("/api/flashcards", get(tools::flashcards_get_handler).post(tools::flashcards_post_handler))
         .route("/api/webhook/razorpay", post(payment::razorpay_webhook_handler))
         .layer(cors)
         .with_state(state);

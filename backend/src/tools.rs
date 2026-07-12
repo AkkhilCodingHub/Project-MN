@@ -35,9 +35,23 @@ pub struct FlashcardPayload {
     pub back: String,
 }
 
-pub async fn quiz_handler(
+pub async fn quiz_get_handler(
+    State(state): State<ToolsState>,
+    axum::extract::Query(payload): axum::extract::Query<ToolRequestPayload>,
+) -> impl IntoResponse {
+    quiz_core(state, payload).await
+}
+
+pub async fn quiz_post_handler(
     State(state): State<ToolsState>,
     Json(payload): Json<ToolRequestPayload>,
+) -> impl IntoResponse {
+    quiz_core(state, payload).await
+}
+
+async fn quiz_core(
+    state: ToolsState,
+    payload: ToolRequestPayload,
 ) -> impl IntoResponse {
     let user_id = match Uuid::parse_str(&payload.user_id) {
         Ok(uuid) => uuid,
@@ -90,8 +104,9 @@ pub async fn quiz_handler(
 
     match state.ai.generate_content(&prompt, true).await {
         Ok(json_str) => {
+            let cleaned_str = clean_json_braces(&json_str);
             // Validate JSON
-            match serde_json::from_str::<QuizPayload>(&json_str) {
+            match serde_json::from_str::<QuizPayload>(&cleaned_str) {
                 Ok(quiz) => (StatusCode::OK, Json(quiz)).into_response(),
                 Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("AI generated invalid quiz JSON: {}", err), "raw": json_str }))).into_response(),
             }
@@ -100,9 +115,23 @@ pub async fn quiz_handler(
     }
 }
 
-pub async fn flashcards_handler(
+pub async fn flashcards_get_handler(
+    State(state): State<ToolsState>,
+    axum::extract::Query(payload): axum::extract::Query<ToolRequestPayload>,
+) -> impl IntoResponse {
+    flashcards_core(state, payload).await
+}
+
+pub async fn flashcards_post_handler(
     State(state): State<ToolsState>,
     Json(payload): Json<ToolRequestPayload>,
+) -> impl IntoResponse {
+    flashcards_core(state, payload).await
+}
+
+async fn flashcards_core(
+    state: ToolsState,
+    payload: ToolRequestPayload,
 ) -> impl IntoResponse {
     let user_id = match Uuid::parse_str(&payload.user_id) {
         Ok(uuid) => uuid,
@@ -152,12 +181,98 @@ pub async fn flashcards_handler(
 
     match state.ai.generate_content(&prompt, true).await {
         Ok(json_str) => {
+            let cleaned_str = clean_json_braces(&json_str);
             // Validate JSON
-            match serde_json::from_str::<Vec<FlashcardPayload>>(&json_str) {
+            match serde_json::from_str::<Vec<FlashcardPayload>>(&cleaned_str) {
                 Ok(cards) => (StatusCode::OK, Json(cards)).into_response(),
                 Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("AI generated invalid flashcards JSON: {}", err), "raw": json_str }))).into_response(),
             }
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to generate flashcard content: {}", e) }))).into_response(),
+    }
+}
+
+// Robust helper to balance matching braces, crop out trailing formatting anomalies, and heal truncated JSON blocks
+fn clean_json_braces(s: &str) -> String {
+    let s = s.trim();
+    
+    // Strip markdown wrappers if present
+    let s = if s.starts_with("```json") {
+        s.strip_prefix("```json").unwrap_or(s)
+    } else if s.starts_with("```") {
+        s.strip_prefix("```").unwrap_or(s)
+    } else {
+        s
+    };
+    
+    let s = if s.ends_with("```") {
+        s.strip_suffix("```").unwrap_or(s)
+    } else {
+        s
+    };
+    
+    let s = s.trim();
+    let chars: Vec<char> = s.chars().collect();
+    let mut balanced = String::new();
+    let mut brace_stack = Vec::new();
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut started = false;
+
+    for c in chars {
+        if in_string {
+            if c == '\\' {
+                escaped = !escaped;
+            } else if c == '"' && !escaped {
+                in_string = false;
+            } else {
+                escaped = false;
+            }
+            balanced.push(c);
+        } else {
+            if c == '"' {
+                in_string = true;
+                escaped = false;
+            } else if c == '{' {
+                brace_stack.push('{');
+                started = true;
+            } else if c == '[' {
+                brace_stack.push('[');
+                started = true;
+            } else if c == '}' {
+                if brace_stack.last() == Some(&'{') {
+                    brace_stack.pop();
+                }
+            } else if c == ']' {
+                if brace_stack.last() == Some(&'[') {
+                    brace_stack.pop();
+                }
+            }
+            
+            if started {
+                balanced.push(c);
+            }
+            
+            if started && brace_stack.is_empty() {
+                break;
+            }
+        }
+    }
+
+    // Auto-heal missing trailing brackets if the model truncated the output
+    if started && !brace_stack.is_empty() {
+        for open_brace in brace_stack.iter().rev() {
+            if *open_brace == '{' {
+                balanced.push('}');
+            } else if *open_brace == '[' {
+                balanced.push(']');
+            }
+        }
+    }
+
+    if balanced.is_empty() {
+        s.to_string()
+    } else {
+        balanced
     }
 }

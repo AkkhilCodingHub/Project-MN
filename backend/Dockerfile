@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM rust:1.79-slim-bookworm AS builder
+FROM rust:slim-bookworm AS builder
 
 # Install build dependencies for compiling OpenSSL (required by native-tls / SQLx / reqwest)
 RUN apt-get update && apt-get install -y \
