@@ -1,0 +1,41 @@
+# Rust build and compilation artifacts
+target/
+/backend/target/
+Cargo.lock
+**/Cargo.lock
+
+
+# Local environment configurations (contain sensitive API keys and database passwords)
+.env
+.env.local
+/backend/.env
+/backend/.env.local
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary upload files created during PDF parsing/ingestion
+temp_upload_*.pdf
+/backend/temp_upload_*.pdf
+
+# IDE configs and workspace settings
+.vscode/
+.idea/
+*.suo
+*.ntvsca
+*.njsproj
+*.sln
+*.sw?
+
+
+# Setup & deployment guides
+/deployment_guide.md
+/backend/online_setup_guide.md
+/backend/local_setup_guide.md
+
