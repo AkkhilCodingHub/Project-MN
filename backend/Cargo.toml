@@ -1,7 +1,7 @@
 [package]
 name = "studytrace_backend"
 version = "0.1.0"
-edition = "2021"
+edition = "2026"
 
 [dependencies]
 axum = { version = "0.7.5", features = ["multipart"] }
@@ -19,4 +19,16 @@ futures = "0.3.30"
 hex = "0.4.3"
 hmac = "0.12.1"
 sha2 = "0.10.8"
+
+[profile.release]
+opt-level = 3            # Optimize binary for maximum runtime speed
+lto = "thin"             # Thin Link-Time Optimization (speeds up linking while retaining performance)
+codegen-units = 16       # Parallelize compile codegen to compile release builds faster
+panic = "abort"          # Reduce binary size and speed up execution by stripping panic unwinding stack traces
+
+[profile.dev]
+opt-level = 0            # No optimization for fast compile times during local dev
+debug = true
+split-debuginfo = "unpacked" # macOS-specific compile speed boost (bypasses running dsymutil)
+
 
