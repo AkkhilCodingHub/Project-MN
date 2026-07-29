@@ -12,7 +12,6 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Self {
-        // Load .env file if it exists
         let _ = dotenvy::dotenv();
 
         let database_url = env::var("DATABASE_URL")

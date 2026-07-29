@@ -39,3 +39,9 @@ temp_upload_*.pdf
 /backend/online_setup_guide.md
 /backend/local_setup_guide.md
 
+# AI Workflow files
+/AGENTS.md
+/SPEC.md
+/ROADMAP.md
+/TASKS.md
+

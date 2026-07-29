@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # 1. Monitor Cargo (Rust) dependencies in the backend folder
+  - package-ecosystem: "cargo"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+
+  # 2. Monitor GitHub Actions workflow updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1

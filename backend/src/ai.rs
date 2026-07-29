@@ -36,7 +36,6 @@ struct EmbeddingValues {
     values: Vec<f32>,
 }
 
-// Generate Content structs
 #[derive(Serialize)]
 struct GenerateRequest {
     contents: Vec<GenerateContent>,

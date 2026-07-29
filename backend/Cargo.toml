@@ -9,7 +9,7 @@ tokio = { version = "1.38", features = ["full"] }
 reqwest = { version = "0.12.5", features = ["json", "multipart", "stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "0.7.4", features = ["runtime-tokio", "postgres", "chrono", "uuid", "tls-native-tls"] }
+sqlx = { version = "0.8.1", features = ["runtime-tokio", "postgres", "chrono", "uuid", "tls-native-tls"] }
 pdf-extract = "0.7.3"
 tower-http = { version = "0.5.2", features = ["cors"] }
 dotenvy = "0.15"
@@ -27,8 +27,14 @@ codegen-units = 16       # Parallelize compile codegen to compile release builds
 panic = "abort"          # Reduce binary size and speed up execution by stripping panic unwinding stack traces
 
 [profile.dev]
-opt-level = 0            # No optimization for fast compile times during local dev
-debug = true
-split-debuginfo = "unpacked" # macOS-specific compile speed boost (bypasses running dsymutil)
+opt-level = 0
+debug = 1                       # Fast compile times (line tables only, cuts debug bloat by ~70%)
+incremental = true              # Enable fast cached incremental re-compiles (<100ms)
+codegen-units = 256             # Maximize CPU core parallel compilation
+split-debuginfo = "unpacked"   # macOS fast compile speed boost
+
+[profile.dev.build-override]
+opt-level = 0
+codegen-units = 256
 
 

@@ -21,7 +21,6 @@ use db::DbClient;
 use ai::GeminiClient;
 use vector::PineconeClient;
 
-// Global Shared App State
 #[derive(Clone)]
 pub struct AppState {
     pub db: DbClient,
@@ -30,7 +29,6 @@ pub struct AppState {
     pub config: Config,
 }
 
-// Implement FromRef for decoupled route states
 impl FromRef<AppState> for ingest::IngestState {
     fn from_ref(state: &AppState) -> Self {
         ingest::IngestState {
@@ -71,16 +69,13 @@ impl FromRef<AppState> for payment::PaymentState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Load configuration
     let config = Config::from_env();
     println!("Configuration loaded. Starting StudyTrace Backend on port {}...", config.port);
 
-    // 2. Connect to Database (will also initialize tables if missing)
     println!("Connecting to database...");
     let db = DbClient::new(&config.database_url).await?;
     println!("Database connected and schemas verified successfully.");
 
-    // 3. Initialize API Clients
     let ai = GeminiClient::new(config.gemini_api_key.clone());
     let vector = PineconeClient::new(config.pinecone_api_key.clone(), config.pinecone_host.clone());
 
@@ -91,13 +86,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config: config.clone(),
     };
 
-    // 4. Configure CORS layer to support local frontend development
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
-    // 5. Build Router & bind endpoints
     let app = Router::new()
         .route("/api/ingest", post(ingest::ingest_handler))
         .route("/api/query", get(query::query_get_handler).post(query::query_post_handler))
@@ -107,7 +100,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(cors)
         .with_state(state);
 
-    // 6. Bind Listener and Start HTTP Server
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
     println!("Listening on {}", addr);
     let listener = TcpListener::bind(addr).await?;
