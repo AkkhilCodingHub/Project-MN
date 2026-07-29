@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub Issue Templates:** Standardized templates for reporting bugs and suggesting new features.
 - **GitHub Security Policy:** Set up vulnerability reporting guidelines in `.github/SECURITY.md`.
 - **Dependabot Scan Config:** Automated weekly checks for Rust dependencies and Actions workflows.
+- **Auto-Assign Workflow:** Configured a GitHub Action workflow to automatically assign new PRs to maintainers (`akkhilcodinghub` and `itzshrutiiisharma`).
 
 ### Changed
 - **Database Connection Pooling:** Set maximum connections to 5 and added timeout/idle limits to prevent Supabase connection exhaustion on Railway.
