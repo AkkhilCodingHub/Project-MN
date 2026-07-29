@@ -1,4 +1,5 @@
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Row, postgres::PgPoolOptions};
+use std::time::Duration;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
@@ -18,7 +19,13 @@ pub struct DbClient {
 
 impl DbClient {
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
-        let pool = PgPool::connect(database_url).await?;
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .min_connections(1)
+            .acquire_timeout(Duration::from_secs(3))
+            .idle_timeout(Duration::from_secs(30))
+            .connect(database_url)
+            .await?;
         
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS user_study_stats (
