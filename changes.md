@@ -6,7 +6,7 @@ This document outlines the modifications made to the codebase to optimize perfor
 
 ## 1. Database Connection Pooling Optimization
 
-### File: [backend/src/db.rs](file:///Users/akkhil/Github/Project%20MN/backend/src/db.rs)
+### File: [backend/src/db.rs](backend/src/db.rs)
 - **Problem:** By default, SQLx creates connection pools with up to 10 connections. On serverless hosting like Railway connecting to Supabase's Free Tier, concurrent requests or multiple backend rebuilds can easily exhaust the Postgres connection limits.
 - **Change:** Configured connection pooling parameters using `PgPoolOptions`:
   - `max_connections(5)`: Caps connections to 5 to prevent database connection exhaustion.
@@ -18,7 +18,7 @@ This document outlines the modifications made to the codebase to optimize perfor
 
 ## 2. Compiler Optimization for Container Running
 
-### File: [backend/Cargo.toml](file:///Users/akkhil/Github/Project%20MN/backend/Cargo.toml)
+### File: [backend/Cargo.toml](backend/Cargo.toml)
 - **Problem:** Standard release builds generate larger binaries and are not optimized for memory constraints on hosted containers.
 - **Change:** Tuned the Rust compiler release profile:
   - `lto = true`: Enabled full Link-Time Optimization (instead of `"thin"`) for maximum runtime performance.

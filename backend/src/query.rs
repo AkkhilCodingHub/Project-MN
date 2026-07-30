@@ -73,7 +73,7 @@ async fn query_core(
             }
         }
         Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database check failed: {}", e) }))).into_response();
+            return crate::db::map_db_error(e);
         }
     }
 

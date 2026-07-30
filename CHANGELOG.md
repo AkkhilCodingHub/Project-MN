@@ -24,4 +24,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Self-Healing JSON Parser:** Implemented stack-based bracket balancing in AI text parsers to automatically heal truncated LLM JSON payloads.
 - **Actions Security Warning:** Added explicit `contents: read` permissions to GitHub Actions workflow GITHUB_TOKEN permissions.
-- **SQLx Protocol Smuggling (CVE/GHSA):** Upgraded `sqlx` from `0.7.4` to `0.8.1` to patch protocol smuggling injection vulnerabilities.
+- **SQLx Protocol Smuggling (RUSTSEC-2024-0363):** Upgraded `sqlx` from `0.7.4` to `0.8.1` to patch protocol smuggling injection vulnerabilities.

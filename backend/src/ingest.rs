@@ -66,7 +66,7 @@ pub async fn ingest_handler(
             }
         }
         Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database check failed: {}", e) }))).into_response();
+            return crate::db::map_db_error(e);
         }
     }
 
@@ -129,7 +129,7 @@ pub async fn ingest_handler(
     }
 
     if let Err(e) = state.db.record_document_upload(user_id, &file_name, file_size, &namespace).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to save upload log in database: {}", e) }))).into_response();
+        return crate::db::map_db_error(e);
     }
 
     (StatusCode::OK, Json(json!({

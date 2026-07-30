@@ -2,6 +2,7 @@ use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use std::time::Duration;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 
 #[derive(Debug, Clone)]
 pub struct UserStats {
@@ -19,9 +20,18 @@ pub struct DbClient {
 
 impl DbClient {
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
+        let max_connections = std::env::var("DATABASE_MAX_CONNECTIONS")
+            .ok()
+            .and_then(|val| val.parse::<u32>().ok())
+            .unwrap_or(5);
+        let min_connections = std::env::var("DATABASE_MIN_CONNECTIONS")
+            .ok()
+            .and_then(|val| val.parse::<u32>().ok())
+            .unwrap_or(1);
+
         let pool = PgPoolOptions::new()
-            .max_connections(5)
-            .min_connections(1)
+            .max_connections(max_connections)
+            .min_connections(min_connections)
             .acquire_timeout(Duration::from_secs(3))
             .idle_timeout(Duration::from_secs(30))
             .connect(database_url)
@@ -117,6 +127,18 @@ impl DbClient {
     ) -> Result<(), sqlx::Error> {
         let mut tx = self.pool.begin().await?;
 
+        // Check if this document has already been recorded (idempotency check)
+        let existing = sqlx::query("SELECT 1 FROM uploaded_documents WHERE user_id = $1 AND file_name = $2")
+            .bind(user_id)
+            .bind(file_name)
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        if existing.is_some() {
+            tx.commit().await?;
+            return Ok(());
+        }
+
         let doc_id = Uuid::new_v4();
         sqlx::query(
             "INSERT INTO uploaded_documents (id, user_id, file_name, file_size, pinecone_namespace, created_at)
@@ -150,5 +172,20 @@ impl DbClient {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+}
+
+pub fn map_db_error(e: sqlx::Error) -> axum::response::Response {
+    match e {
+        sqlx::Error::PoolTimedOut => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "error": "Database connection pool timeout. Service is temporarily overloaded. Please try again." })),
+        )
+            .into_response(),
+        _ => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("Database check failed: {}", e) })),
+        )
+            .into_response(),
     }
 }

@@ -8,8 +8,8 @@ Please see the table below for details on support status:
 
 | Version | Supported | Notes |
 | :--- | :--- | :--- |
-| 1.x (MVP) | :white_check_mark: | Currently active development and patches. |
-| < 1.0 | :x: | Development prototypes (deprecated). |
+| 0.1.x-mvp | :white_check_mark: | Currently active development and patches. |
+| < 0.1.0 | :x: | Development prototypes (deprecated). |
 
 ## Reporting a Vulnerability
 
@@ -17,7 +17,7 @@ We take the security of our student data, database connections, and API keys ser
 
 Please follow these steps to report privately:
 
-1. Send an email to the repository owner or project maintainer details listed in your organization settings.
+1. Send an email privately to security@akkhilcodinghub.com, or use the GitHub Private Vulnerability Reporting feature on this repository under the "Security" tab.
 2. Include a detailed description of the vulnerability, the endpoint affected, and step-by-step instructions to reproduce or exploit it.
 3. Allow up to 48 hours for the maintainers to acknowledge and respond to your report.
 4. Once a fix is verified, a patch release will be published, and you will be credited for the discovery if desired.

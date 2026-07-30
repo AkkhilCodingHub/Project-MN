@@ -62,7 +62,7 @@ pub async fn razorpay_webhook_handler(
                 "payment.captured" | "subscription.charged" | "order.paid" => {
                     if let Err(e) = state.db.upgrade_user_tier(user_id, "pro").await {
                         eprintln!("Failed to upgrade user {} to pro: {}", user_id, e);
-                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                        return crate::db::map_db_error(e);
                     }
                     println!("Successfully upgraded user {} to Pro tier.", user_id);
                 }

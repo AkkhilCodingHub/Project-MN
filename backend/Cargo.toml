@@ -29,7 +29,7 @@ strip = true             # Strip symbols and debuginfo to minimize memory usage 
 
 [profile.dev]
 opt-level = 0
-debug = 1                       # Fast compile times (line tables only, cuts debug bloat by ~70%)
+debug = "line-tables-only"          # Fast compile times (line tables only, cuts debug bloat by ~70%)
 incremental = true              # Enable fast cached incremental re-compiles (<100ms)
 codegen-units = 256             # Maximize CPU core parallel compilation
 split-debuginfo = "unpacked"   # macOS fast compile speed boost
