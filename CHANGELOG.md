@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub Pull Request Template:** Structured guidelines for describing modifications, testing configurations, and staging checklists.
 - **GitHub Issue Templates:** Standardized templates for reporting bugs and suggesting new features.
 - **GitHub Security Policy:** Set up vulnerability reporting guidelines in `.github/SECURITY.md`.
-- **Dependabot Scan Config:** Automated weekly checks for Rust dependencies and Actions workflows.
+- **Dependabot Scan Config:** Automated daily checks for Rust dependencies and Actions workflows.
 - **Auto-Assign Workflow:** Configured a GitHub Action workflow to automatically assign new PRs to maintainers (`akkhilcodinghub` and `itzshrutiiisharma`).
 
 ### Changed

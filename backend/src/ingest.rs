@@ -77,19 +77,29 @@ pub async fn ingest_handler(
     };
 
     if let Err(e) = temp_file.write_all(&file_bytes) {
-        let _ = std::fs::remove_file(&temp_filename);
+        drop(temp_file);
+        if let Err(err) = std::fs::remove_file(&temp_filename) {
+            eprintln!("Failed to clean up temp file {} after write error: {}", temp_filename, err);
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to write temporary file: {}", e) }))).into_response();
     }
+
+    // Flush and close the file handle before parsing or deleting the file
+    drop(temp_file);
 
     let extracted_text = match pdf_extract::extract_text(&temp_filename) {
         Ok(text) => text,
         Err(e) => {
-            let _ = std::fs::remove_file(&temp_filename);
+            if let Err(err) = std::fs::remove_file(&temp_filename) {
+                eprintln!("Failed to clean up temp file {} after extraction error: {}", temp_filename, err);
+            }
             return (StatusCode::BAD_REQUEST, Json(json!({ "error": format!("Failed to parse PDF text: {}", e) }))).into_response();
         }
     };
 
-    let _ = std::fs::remove_file(&temp_filename);
+    if let Err(err) = std::fs::remove_file(&temp_filename) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to remove temporary file: {}", err) }))).into_response();
+    }
 
     let pages: Vec<&str> = extracted_text.split('\x0c').collect();
     let mut vectors_to_upsert = Vec::new();

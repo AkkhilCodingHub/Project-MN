@@ -29,6 +29,16 @@ impl DbClient {
             .and_then(|val| val.parse::<u32>().ok())
             .unwrap_or(1);
 
+        if min_connections > max_connections {
+            return Err(sqlx::Error::Configuration(
+                format!(
+                    "DATABASE_MIN_CONNECTIONS ({}) cannot be greater than DATABASE_MAX_CONNECTIONS ({})",
+                    min_connections, max_connections
+                )
+                .into(),
+            ));
+        }
+
         let pool = PgPoolOptions::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
@@ -182,10 +192,13 @@ pub fn map_db_error(e: sqlx::Error) -> axum::response::Response {
             Json(serde_json::json!({ "error": "Database connection pool timeout. Service is temporarily overloaded. Please try again." })),
         )
             .into_response(),
-        _ => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": format!("Database check failed: {}", e) })),
-        )
-            .into_response(),
+        _ => {
+            eprintln!("Database error: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "Internal database error occurred. Please try again later." })),
+            )
+                .into_response()
+        }
     }
 }

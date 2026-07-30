@@ -21,16 +21,16 @@ Please delete options that are not relevant.
 
 Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration.
 
-- **Test A:** Verified local backend execution with GET/POST RAG query endpoints.
-- **Test B:** Verified database constraint logic (e.g. Free Tier limit of 3 files, 10 queries/day).
+- **Test A:** [Describe the test case run and output, e.g. verified endpoint responses]
+- **Test B:** [Describe additional test cases, e.g. checked validation limits]
 
 ### Test Configuration
 
-- **Rust Version:** 1.82+
-- **Database:** Supabase Postgres (Free Tier)
-- **Vector Store:** Pinecone (768 dimensions, Starter Tier)
-- **LLM API:** Google Gemini 1.5 Flash (Free Tier)
-- **Billing API:** Razorpay (Pro Tier webhook integration)
+- **Rust Version:** [e.g. 1.82+]
+- **Database:** [e.g. Supabase Postgres (Free Tier)]
+- **Vector Store:** [e.g. Pinecone (Starter Tier)]
+- **LLM API:** [e.g. Google Gemini 1.5 Flash]
+- **Billing API:** [e.g. Razorpay Integration]
 
 ## Checklist
 
