@@ -25,13 +25,11 @@ pub async fn razorpay_webhook_handler(
     headers: HeaderMap,
     body_bytes: Bytes,
 ) -> impl IntoResponse {
-    // 1. Get X-Razorpay-Signature header
     let signature = match headers.get("X-Razorpay-Signature").and_then(|v| v.to_str().ok()) {
         Some(sig) => sig,
         None => return StatusCode::BAD_REQUEST.into_response(),
     };
 
-    // 2. Verify signature if webhook secret is configured
     if let Some(secret) = &state.config.razorpay_webhook_secret {
         let mut mac = match HmacSha256::new_from_slice(secret.as_bytes()) {
             Ok(m) => m,
@@ -46,17 +44,13 @@ pub async fn razorpay_webhook_handler(
         }
     }
 
-    // 3. Parse body as JSON
     let json_body: Value = match serde_json::from_slice(&body_bytes) {
         Ok(json) => json,
         Err(_) => return StatusCode::BAD_REQUEST.into_response(),
     };
 
-    // 4. Extract event type and user_id from notes
     let event = json_body.get("event").and_then(|v| v.as_str()).unwrap_or("");
     
-    // We look for user_id inside payload.payment.entity.notes.user_id 
-    // or payload.subscription.entity.notes.user_id
     let user_id_opt = json_body
         .pointer("/payload/payment/entity/notes/user_id")
         .or_else(|| json_body.pointer("/payload/subscription/entity/notes/user_id"))
@@ -68,7 +62,7 @@ pub async fn razorpay_webhook_handler(
                 "payment.captured" | "subscription.charged" | "order.paid" => {
                     if let Err(e) = state.db.upgrade_user_tier(user_id, "pro").await {
                         eprintln!("Failed to upgrade user {} to pro: {}", user_id, e);
-                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                        return crate::db::map_db_error(e);
                     }
                     println!("Successfully upgraded user {} to Pro tier.", user_id);
                 }

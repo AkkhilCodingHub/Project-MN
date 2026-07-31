@@ -1,6 +1,8 @@
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Row, postgres::PgPoolOptions};
+use std::time::Duration;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 
 #[derive(Debug, Clone)]
 pub struct UserStats {
@@ -18,9 +20,33 @@ pub struct DbClient {
 
 impl DbClient {
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
-        let pool = PgPool::connect(database_url).await?;
+        let max_connections = std::env::var("DATABASE_MAX_CONNECTIONS")
+            .ok()
+            .and_then(|val| val.parse::<u32>().ok())
+            .unwrap_or(5);
+        let min_connections = std::env::var("DATABASE_MIN_CONNECTIONS")
+            .ok()
+            .and_then(|val| val.parse::<u32>().ok())
+            .unwrap_or(1);
+
+        if min_connections > max_connections {
+            return Err(sqlx::Error::Configuration(
+                format!(
+                    "DATABASE_MIN_CONNECTIONS ({}) cannot be greater than DATABASE_MAX_CONNECTIONS ({})",
+                    min_connections, max_connections
+                )
+                .into(),
+            ));
+        }
+
+        let pool = PgPoolOptions::new()
+            .max_connections(max_connections)
+            .min_connections(min_connections)
+            .acquire_timeout(Duration::from_secs(3))
+            .idle_timeout(Duration::from_secs(30))
+            .connect(database_url)
+            .await?;
         
-        // Ensure tables exist
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS user_study_stats (
                 user_id UUID PRIMARY KEY,
@@ -76,12 +102,10 @@ impl DbClient {
         let should_reset = now.signed_duration_since(stats.last_reset_date).num_hours() >= 24;
         let current_count = if should_reset { 0 } else { stats.daily_queries_count };
 
-        // Pro users have unlimited queries. Free users are limited to 10.
         if stats.tier == "free" && current_count >= 10 {
             return Ok(false); // Gated!
         }
 
-        // Increment count and update DB
         let reset_sql = if should_reset {
             "UPDATE user_study_stats SET daily_queries_count = 1, last_reset_date = NOW() WHERE user_id = $1"
         } else {
@@ -111,10 +135,20 @@ impl DbClient {
         file_size: i32,
         namespace: &str,
     ) -> Result<(), sqlx::Error> {
-        // Start transaction
         let mut tx = self.pool.begin().await?;
 
-        // 1. Insert file record
+        // Check if this document has already been recorded (idempotency check)
+        let existing = sqlx::query("SELECT 1 FROM uploaded_documents WHERE user_id = $1 AND file_name = $2")
+            .bind(user_id)
+            .bind(file_name)
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        if existing.is_some() {
+            tx.commit().await?;
+            return Ok(());
+        }
+
         let doc_id = Uuid::new_v4();
         sqlx::query(
             "INSERT INTO uploaded_documents (id, user_id, file_name, file_size, pinecone_namespace, created_at)
@@ -128,7 +162,6 @@ impl DbClient {
         .execute(&mut *tx)
         .await?;
 
-        // 2. Increment total_uploaded_files count
         sqlx::query(
             "UPDATE user_study_stats SET total_uploaded_files = total_uploaded_files + 1 WHERE user_id = $1"
         )
@@ -149,5 +182,23 @@ impl DbClient {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+}
+
+pub fn map_db_error(e: sqlx::Error) -> axum::response::Response {
+    match e {
+        sqlx::Error::PoolTimedOut => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "error": "Database connection pool timeout. Service is temporarily overloaded. Please try again." })),
+        )
+            .into_response(),
+        _ => {
+            eprintln!("Database error: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "Internal database error occurred. Please try again later." })),
+            )
+                .into_response()
+        }
     }
 }

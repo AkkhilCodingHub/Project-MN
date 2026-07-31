@@ -9,7 +9,7 @@ tokio = { version = "1.38", features = ["full"] }
 reqwest = { version = "0.12.5", features = ["json", "multipart", "stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "0.7.4", features = ["runtime-tokio", "postgres", "chrono", "uuid", "tls-native-tls"] }
+sqlx = { version = "0.8.1", features = ["runtime-tokio", "postgres", "chrono", "uuid", "tls-native-tls"] }
 pdf-extract = "0.7.3"
 tower-http = { version = "0.5.2", features = ["cors"] }
 dotenvy = "0.15"
@@ -22,13 +22,20 @@ sha2 = "0.10.8"
 
 [profile.release]
 opt-level = 3            # Optimize binary for maximum runtime speed
-lto = "thin"             # Thin Link-Time Optimization (speeds up linking while retaining performance)
-codegen-units = 16       # Parallelize compile codegen to compile release builds faster
+lto = true               # Full Link-Time Optimization (maximum runtime performance)
+codegen-units = 1        # Disables parallel codegen to allow LLVM to perform global optimization passes
 panic = "abort"          # Reduce binary size and speed up execution by stripping panic unwinding stack traces
+strip = true             # Strip symbols and debuginfo to minimize memory usage and binary footprint
 
 [profile.dev]
-opt-level = 0            # No optimization for fast compile times during local dev
-debug = true
-split-debuginfo = "unpacked" # macOS-specific compile speed boost (bypasses running dsymutil)
+opt-level = 0
+debug = "line-tables-only"          # Fast compile times (line tables only, cuts debug bloat by ~70%)
+incremental = true              # Enable fast cached incremental re-compiles (<100ms)
+codegen-units = 256             # Maximize CPU core parallel compilation
+split-debuginfo = "unpacked"   # macOS fast compile speed boost
+
+[profile.dev.build-override]
+opt-level = 0
+codegen-units = 256
 
 

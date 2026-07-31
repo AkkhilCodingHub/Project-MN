@@ -66,7 +66,6 @@ async fn query_core(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Query cannot be empty" }))).into_response();
     }
 
-    // 1. Check and increment daily query limit
     match state.db.check_and_increment_query_limit(user_id).await {
         Ok(allowed) => {
             if !allowed {
@@ -74,11 +73,10 @@ async fn query_core(
             }
         }
         Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database check failed: {}", e) }))).into_response();
+            return crate::db::map_db_error(e);
         }
     }
 
-    // 2. Embed user question
     let query_vector = match state.ai.generate_embedding(&payload.query).await {
         Ok(vec) => vec,
         Err(e) => {
@@ -86,7 +84,6 @@ async fn query_core(
         }
     };
 
-    // 3. Query Pinecone Vector Database
     let namespace = format!("user_{}", user_id);
     let pinecone_res = match state.vector.query(&namespace, query_vector, 5).await {
         Ok(res) => res,
@@ -95,7 +92,6 @@ async fn query_core(
         }
     };
 
-    // 4. Extract context excerpts and trace sources
     let mut context_chunks = Vec::new();
     let mut sources_set = HashSet::new();
 
@@ -121,7 +117,6 @@ async fn query_core(
         }
     }
 
-    // 5. Construct context-augmented prompt
     let context_str = if context_chunks.is_empty() {
         "NO RELEVANT notes or context found.".to_string()
     } else {
@@ -138,7 +133,6 @@ async fn query_core(
         context_str, payload.query
     );
 
-    // 6. Generate Response from Gemini Flash
     let response_text = match state.ai.generate_content(&prompt, false).await {
         Ok(text) => text,
         Err(e) => {
@@ -146,7 +140,6 @@ async fn query_core(
         }
     };
 
-    // 7. Determine grounding status
     let grounded = !response_text.trim_start().starts_with("I cannot find this in your uploaded notes");
     let sources = if grounded {
         sources_set.into_iter().collect()

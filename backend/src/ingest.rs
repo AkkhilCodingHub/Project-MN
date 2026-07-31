@@ -28,7 +28,6 @@ pub async fn ingest_handler(
     let mut file_data = None;
     let mut file_name = "document.pdf".to_string();
 
-    // Parse multipart fields
     while let Ok(Some(field)) = multipart.next_field().await {
         let name = field.name().unwrap_or("").to_string();
         if name == "user_id" {
@@ -43,7 +42,6 @@ pub async fn ingest_handler(
         }
     }
 
-    // Validate inputs
     let user_id_str = match user_id_str {
         Some(uid) => uid,
         None => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Missing user_id field" }))).into_response(),
@@ -61,7 +59,6 @@ pub async fn ingest_handler(
 
     let file_size = file_bytes.len() as i32;
 
-    // 1. Check upload limit
     match state.db.check_upload_limit(user_id).await {
         Ok(allowed) => {
             if !allowed {
@@ -69,11 +66,10 @@ pub async fn ingest_handler(
             }
         }
         Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database check failed: {}", e) }))).into_response();
+            return crate::db::map_db_error(e);
         }
     }
 
-    // 2. Save file temporarily in workspace CWD
     let temp_filename = format!("./temp_upload_{}.pdf", Uuid::new_v4());
     let mut temp_file = match File::create(&temp_filename) {
         Ok(f) => f,
@@ -81,23 +77,30 @@ pub async fn ingest_handler(
     };
 
     if let Err(e) = temp_file.write_all(&file_bytes) {
-        let _ = std::fs::remove_file(&temp_filename);
+        drop(temp_file);
+        if let Err(err) = std::fs::remove_file(&temp_filename) {
+            eprintln!("Failed to clean up temp file {} after write error: {}", temp_filename, err);
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to write temporary file: {}", e) }))).into_response();
     }
 
-    // 3. Extract text from PDF
+    // Flush and close the file handle before parsing or deleting the file
+    drop(temp_file);
+
     let extracted_text = match pdf_extract::extract_text(&temp_filename) {
         Ok(text) => text,
         Err(e) => {
-            let _ = std::fs::remove_file(&temp_filename);
+            if let Err(err) = std::fs::remove_file(&temp_filename) {
+                eprintln!("Failed to clean up temp file {} after extraction error: {}", temp_filename, err);
+            }
             return (StatusCode::BAD_REQUEST, Json(json!({ "error": format!("Failed to parse PDF text: {}", e) }))).into_response();
         }
     };
 
-    // Clean up temporary file
-    let _ = std::fs::remove_file(&temp_filename);
+    if let Err(err) = std::fs::remove_file(&temp_filename) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to remove temporary file: {}", err) }))).into_response();
+    }
 
-    // 4. Split text into chunks page-by-page (using Form-Feed '\x0c' as page break)
     let pages: Vec<&str> = extracted_text.split('\x0c').collect();
     let mut vectors_to_upsert = Vec::new();
 
@@ -113,10 +116,8 @@ pub async fn ingest_handler(
                 continue;
             }
 
-            // Generate unique chunk ID
             let chunk_id = format!("{}_p{}_c{}", user_id, page_num, chunk_idx);
 
-            // Generate Embedding using Gemini
             let embedding = match state.ai.generate_embedding(&chunk).await {
                 Ok(vec) => vec,
                 Err(e) => {
@@ -132,18 +133,15 @@ pub async fn ingest_handler(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "No indexable text found in PDF" }))).into_response();
     }
 
-    // 5. Upsert vectors to Pinecone under user-specific namespace
     let namespace = format!("user_{}", user_id);
     if let Err(e) = state.vector.upsert_chunks(&namespace, vectors_to_upsert).await {
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Pinecone indexing failed: {}", e) }))).into_response();
     }
 
-    // 6. Record document in database
     if let Err(e) = state.db.record_document_upload(user_id, &file_name, file_size, &namespace).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to save upload log in database: {}", e) }))).into_response();
+        return crate::db::map_db_error(e);
     }
 
-    // Return success
     (StatusCode::OK, Json(json!({
         "message": "File indexed successfully",
         "file_name": file_name,
@@ -152,7 +150,6 @@ pub async fn ingest_handler(
     }))).into_response()
 }
 
-// Character-based sliding window chunker
 fn chunk_text(text: &str, chunk_size: usize, overlap: usize) -> Vec<String> {
     let mut chunks = Vec::new();
     let chars: Vec<char> = text.chars().collect();
@@ -171,7 +168,6 @@ fn chunk_text(text: &str, chunk_size: usize, overlap: usize) -> Vec<String> {
             break;
         }
 
-        // Shift start forward by (chunk_size - overlap)
         if chunk_size > overlap {
             start = start + chunk_size - overlap;
         } else {

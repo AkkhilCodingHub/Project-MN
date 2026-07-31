@@ -58,14 +58,12 @@ async fn quiz_core(
         Err(_) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Invalid user_id UUID format" }))).into_response(),
     };
 
-    // 1. Generate a seed embedding for "core concepts, definitions, formulas, and main topics"
     let seed_text = "core concepts, definitions, formulas, and sessional exam questions";
     let query_vector = match state.ai.generate_embedding(seed_text).await {
         Ok(vec) => vec,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to generate seed embedding: {}", e) }))).into_response(),
     };
 
-    // 2. Retrieve representative chunks from Pinecone
     let namespace = format!("user_{}", user_id);
     let pinecone_res = match state.vector.query(&namespace, query_vector, 8).await {
         Ok(res) => res,
@@ -87,7 +85,6 @@ async fn quiz_core(
 
     let context_str = context_chunks.join("\n---\n");
 
-    // 3. Prompt Gemini to output JSON Quiz
     let prompt = format!(
         "You are an engineering professor. Based ONLY on the following lecture notes context, create one multiple-choice sessional exam question.\n\
          Generate exactly 4 options. Make the questions testing and realistic.\n\
@@ -105,7 +102,6 @@ async fn quiz_core(
     match state.ai.generate_content(&prompt, true).await {
         Ok(json_str) => {
             let cleaned_str = clean_json_braces(&json_str);
-            // Validate JSON
             match serde_json::from_str::<QuizPayload>(&cleaned_str) {
                 Ok(quiz) => (StatusCode::OK, Json(quiz)).into_response(),
                 Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("AI generated invalid quiz JSON: {}", err), "raw": json_str }))).into_response(),
@@ -138,14 +134,12 @@ async fn flashcards_core(
         Err(_) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Invalid user_id UUID format" }))).into_response(),
     };
 
-    // 1. Generate seed embedding
     let seed_text = "important terms, key formulas, core theorems, definitions";
     let query_vector = match state.ai.generate_embedding(seed_text).await {
         Ok(vec) => vec,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Failed to generate seed embedding: {}", e) }))).into_response(),
     };
 
-    // 2. Query Pinecone
     let namespace = format!("user_{}", user_id);
     let pinecone_res = match state.vector.query(&namespace, query_vector, 8).await {
         Ok(res) => res,
@@ -167,7 +161,6 @@ async fn flashcards_core(
 
     let context_str = context_chunks.join("\n---\n");
 
-    // 3. Prompt Gemini to output JSON list of flashcards
     let prompt = format!(
         "You are an academic study assistant. Extract key definitions and core concepts from the notes context below to create a set of exactly 5 flashcards.\n\
          Keep fronts concise (terms/questions) and backs clear and informative (definitions/explanations).\n\
@@ -182,7 +175,6 @@ async fn flashcards_core(
     match state.ai.generate_content(&prompt, true).await {
         Ok(json_str) => {
             let cleaned_str = clean_json_braces(&json_str);
-            // Validate JSON
             match serde_json::from_str::<Vec<FlashcardPayload>>(&cleaned_str) {
                 Ok(cards) => (StatusCode::OK, Json(cards)).into_response(),
                 Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("AI generated invalid flashcards JSON: {}", err), "raw": json_str }))).into_response(),
@@ -192,11 +184,9 @@ async fn flashcards_core(
     }
 }
 
-// Robust helper to balance matching braces, crop out trailing formatting anomalies, and heal truncated JSON blocks
 fn clean_json_braces(s: &str) -> String {
     let s = s.trim();
     
-    // Strip markdown wrappers if present
     let s = if s.starts_with("```json") {
         s.strip_prefix("```json").unwrap_or(s)
     } else if s.starts_with("```") {
@@ -259,7 +249,6 @@ fn clean_json_braces(s: &str) -> String {
         }
     }
 
-    // Auto-heal missing trailing brackets if the model truncated the output
     if started && !brace_stack.is_empty() {
         for open_brace in brace_stack.iter().rev() {
             if *open_brace == '{' {
