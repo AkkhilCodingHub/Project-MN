@@ -1,12 +1,21 @@
 /* ==========================================================================
-   StudyTrace — index.css
-   High-Performance Dark Glassmorphic Design System (Atlas Intel Aesthetic)
+   StudyTrace — index.css (Ionic + Dark Glassmorphic Design System)
    ========================================================================== */
 
 :root {
+  /* Ionic Color Overrides */
+  --ion-background-color: #090a0f;
+  --ion-background-color-rgb: 9, 10, 15;
+  --ion-text-color: #f0f3fa;
+  --ion-text-color-rgb: 240, 243, 250;
+  --ion-font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ion-color-primary: #3346ff;
+  --ion-color-primary-rgb: 51, 70, 255;
+  --ion-color-primary-contrast: #ffffff;
+  
   --bg: #090a0f;
   --bg-surface: #11131a;
-  --card-bg: rgba(18, 20, 29, 0.75);
+  --card-bg: rgba(18, 20, 29, 0.85);
   --card-border: rgba(255, 255, 255, 0.12);
   --card-border-glow: rgba(51, 70, 255, 0.4);
   
@@ -42,25 +51,23 @@
   box-sizing: border-box;
 }
 
-html, body {
-  background: var(--bg);
-  color: var(--text-main);
+html, body, ion-app, ion-content {
+  background: var(--bg) !important;
+  color: var(--text-main) !important;
   font-family: var(--font-sans);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  min-height: 100vh;
-  overflow-x: hidden;
 }
 
-/* Background Technical Mesh Grid */
-body::before {
+/* Technical Mesh Background Grid */
+ion-content::part(scroll)::before {
   content: "";
   position: fixed;
   inset: 0;
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(51, 70, 255, 0.15) 0%, transparent 60%),
-    radial-gradient(circle at 85% 60%, rgba(193, 255, 0, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 0%, rgba(51, 70, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 85% 60%, rgba(193, 255, 0, 0.05) 0%, transparent 50%),
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
@@ -84,18 +91,11 @@ body::before {
   background: var(--brand-blue);
 }
 
-/* Typography Utility */
-h1, h2, h3, h4 {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-}
-
 .mono-text {
   font-family: var(--font-mono);
 }
 
-/* Crosshair Motifs (+ symbol in corners like Atlas Intel) */
+/* Crosshair Motifs (+ symbol) */
 .cross {
   position: relative;
   width: 14px;
@@ -173,6 +173,26 @@ h1, h2, h3, h4 {
   border-color: var(--card-border-glow);
 }
 
+/* Ionic Segment Dark Glass Override */
+ion-segment {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius-pill) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 4px !important;
+}
+
+ion-segment-button {
+  --background-checked: rgba(51, 70, 255, 0.35) !important;
+  --color: var(--text-muted) !important;
+  --color-checked: #ffffff !important;
+  --indicator-color: transparent !important;
+  --border-radius: var(--radius-pill) !important;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.25s var(--ease-smooth);
+}
+
 /* Buttons & Badges */
 .btn-primary {
   display: inline-flex;
@@ -199,12 +219,6 @@ h1, h2, h3, h4 {
   box-shadow: 
     0 10px 28px rgba(51, 70, 255, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .btn-ghost {
