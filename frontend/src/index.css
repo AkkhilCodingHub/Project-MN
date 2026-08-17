@@ -1,0 +1,330 @@
+/* ==========================================================================
+   StudyTrace — index.css (Ionic + Dark Glassmorphic Design System)
+   ========================================================================== */
+
+:root {
+  /* Ionic Color Overrides */
+  --ion-background-color: #090a0f;
+  --ion-background-color-rgb: 9, 10, 15;
+  --ion-text-color: #f0f3fa;
+  --ion-text-color-rgb: 240, 243, 250;
+  --ion-font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ion-color-primary: #3346ff;
+  --ion-color-primary-rgb: 51, 70, 255;
+  --ion-color-primary-contrast: #ffffff;
+  
+  --bg: #090a0f;
+  --bg-surface: #11131a;
+  --card-bg: rgba(18, 20, 29, 0.85);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --card-border-glow: rgba(51, 70, 255, 0.4);
+  
+  --brand-blue: #3346ff;
+  --brand-blue-hover: #4859ff;
+  --dark-blue: #0b18ad;
+  --glow-blue: #5b7cfa;
+  
+  --neon-lime: #c1ff00;
+  --neon-cyan: #00f0ff;
+  --neon-purple: #9d4edf;
+  --alert-red: #ff4c41;
+
+  --text-main: #f0f3fa;
+  --text-muted: #8c97ad;
+  --text-dim: #5a6478;
+
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-pill: 9999px;
+
+  --pad-page: clamp(16px, 4vw, 48px);
+  --max-w: 1440px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, ion-app, ion-content {
+  background: var(--bg) !important;
+  color: var(--text-main) !important;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Technical Mesh Background Grid */
+ion-content::part(scroll)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(51, 70, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 85% 60%, rgba(193, 255, 0, 0.05) 0%, transparent 50%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-blue);
+}
+
+.mono-text {
+  font-family: var(--font-mono);
+}
+
+/* Crosshair Motifs (+ symbol) */
+.cross {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  opacity: 0.5;
+  color: var(--text-muted);
+}
+.cross::before, .cross::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.cross::before {
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+.cross::after {
+  top: 50%;
+  left: 0;
+  height: 1px;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+/* Live Pulsing Dot Badge */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-lime);
+  box-shadow: 0 0 10px var(--neon-lime);
+  display: inline-block;
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+.dot.blue {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+.dot.red {
+  background: var(--alert-red);
+  box-shadow: 0 0 10px var(--alert-red);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+}
+
+/* Glassmorphism Containers */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: border-color 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.glass-panel-glow {
+  box-shadow: 
+    0 0 25px rgba(51, 70, 255, 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: var(--card-border-glow);
+}
+
+/* Ionic Segment Dark Glass Override */
+ion-segment {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius-pill) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 4px !important;
+}
+
+ion-segment-button {
+  --background-checked: rgba(51, 70, 255, 0.35) !important;
+  --color: var(--text-muted) !important;
+  --color-checked: #ffffff !important;
+  --indicator-color: transparent !important;
+  --border-radius: var(--radius-pill) !important;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.25s var(--ease-smooth);
+}
+
+/* Buttons & Badges */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #4457ff 0%, var(--brand-blue) 60%, var(--dark-blue) 100%);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.92rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 6px 20px rgba(51, 70, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-smooth);
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 10px 28px rgba(51, 70, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-smooth);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-pro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, rgba(193, 255, 0, 0.15) 0%, rgba(0, 240, 255, 0.15) 100%);
+  border: 1px solid var(--neon-lime);
+  color: var(--neon-lime);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-smooth);
+}
+
+.btn-pro:hover {
+  background: var(--neon-lime);
+  color: #000;
+  box-shadow: 0 0 20px rgba(193, 255, 0, 0.4);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+}
+
+.badge.green {
+  background: rgba(193, 255, 0, 0.1);
+  border-color: rgba(193, 255, 0, 0.3);
+  color: var(--neon-lime);
+}
+
+.badge.blue {
+  background: rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.3);
+  color: var(--neon-cyan);
+}
+
+/* 3D Flip Card Container */
+.flip-card {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  inset: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* KaTeX Math Tweaks */
+.katex-display {
+  margin: 0.8em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+}
