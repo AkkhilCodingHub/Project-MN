@@ -11,10 +11,17 @@ use axum::{
     routing::{get, post},
     Router,
     extract::FromRef,
+    response::IntoResponse,
+    Json,
 };
+use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
+
+async fn health_handler() -> impl IntoResponse {
+    Json(json!({ "status": "ok", "service": "studytrace-backend" }))
+}
 
 use config::Config;
 use db::DbClient;
@@ -92,6 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_headers(Any);
 
     let app = Router::new()
+        .route("/api/health", get(health_handler))
         .route("/api/ingest", post(ingest::ingest_handler))
         .route("/api/query", get(query::query_get_handler).post(query::query_post_handler))
         .route("/api/quiz", get(tools::quiz_get_handler).post(tools::quiz_post_handler))

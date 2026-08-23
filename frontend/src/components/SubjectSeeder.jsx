@@ -58,7 +58,16 @@ export default function SubjectSeeder({ activeSubject, onSelectSubject }) {
           return (
             <div
               key={sub.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isSelected}
               onClick={() => onSelectSubject(sub.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectSubject(sub.id);
+                }
+              }}
               className={`glass-panel ${isSelected ? 'glass-panel-glow' : ''}`}
               style={{
                 padding: '16px 20px',

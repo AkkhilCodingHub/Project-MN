@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, FileText, CheckCircle2, AlertCircle, Table, RefreshCw } from 'lucide-react';
 import katex from 'katex';
+import { renderSafeMathHtml } from '../utils/renderMath';
 import { queryRAG } from '../services/api';
 
 export default function ChatStudio({ activeSubject, queriesUsed, maxQueries, isPro, onQueryExecuted, onLimitExceeded }) {
@@ -128,29 +129,16 @@ export default function ChatStudio({ activeSubject, queriesUsed, maxQueries, isP
             }
           }
 
-          // Format LaTeX inline/block math
-          try {
-            if (p.includes('$$') || p.includes('$')) {
-              let htmlStr = p;
-              // replace block math
-              htmlStr = htmlStr.replace(/\$\$(.*?)\$\$/gs, (_, math) => {
-                return katex.renderToString(math, { displayMode: true, throwOnError: false });
-              });
-              // replace inline math
-              htmlStr = htmlStr.replace(/\$(.*?)\$/g, (_, math) => {
-                return katex.renderToString(math, { displayMode: false, throwOnError: false });
-              });
-
-              return (
-                <div 
-                  key={idx} 
-                  dangerouslySetInnerHTML={{ __html: htmlStr }} 
-                  style={{ fontSize: '0.92rem' }}
-                />
-              );
-            }
-          } catch {
-            // fallback if katex parse fails
+          // Format LaTeX inline/block math safely
+          if (p.includes('$$') || p.includes('$')) {
+            const htmlStr = renderSafeMathHtml(p);
+            return (
+              <div 
+                key={idx} 
+                dangerouslySetInnerHTML={{ __html: htmlStr }} 
+                style={{ fontSize: '0.92rem' }}
+              />
+            );
           }
 
           return (
@@ -334,7 +322,9 @@ export default function ChatStudio({ activeSubject, queriesUsed, maxQueries, isP
           type="text"
           value={inputQuery}
           onChange={(e) => setInputQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !isLoading) handleSend();
+          }}
           placeholder="Ask a question on your course notes, formulas, or past exam papers..."
           style={{
             flex: 1,

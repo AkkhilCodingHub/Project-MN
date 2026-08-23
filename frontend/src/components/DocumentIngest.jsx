@@ -89,10 +89,19 @@ export default function DocumentIngest({ uploadedDocs, setUploadedDocs, isPro, o
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
         {/* Drag and Drop Zone */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Upload a PDF document"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           className="glass-panel"
           style={{
             padding: '24px',

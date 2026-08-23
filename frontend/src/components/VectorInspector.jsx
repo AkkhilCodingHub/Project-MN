@@ -41,8 +41,8 @@ export default function VectorInspector({ uploadedDocs, queriesUsed, maxQueries,
           </div>
         </div>
 
-        <span className="badge green" style={{ padding: '6px 12px' }}>
-          <span className="dot" /> SYSTEM HEALTHY
+        <span className={`badge ${isOnline ? 'green' : 'red'}`} style={{ padding: '6px 12px' }}>
+          <span className={`dot ${isOnline ? '' : 'red'}`} /> {isOnline ? 'SYSTEM HEALTHY' : 'DEMO SANDBOX MODE'}
         </span>
       </div>
 
@@ -105,11 +105,13 @@ export default function VectorInspector({ uploadedDocs, queriesUsed, maxQueries,
         flexDirection: 'column',
         gap: '6px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
           <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Terminal size={14} color="var(--neon-cyan)" /> Active System Telemetry Log
           </span>
-          <span style={{ color: 'var(--neon-cyan)' }}>[OK] 200 OK</span>
+          <span style={{ color: isOnline ? 'var(--neon-cyan)' : 'var(--alert-red)' }}>
+            {isOnline ? '[OK] 200 OK' : '[DEMO] Offline Fallback'}
+          </span>
         </div>
         <div>[SQLx Pool] Max connections: 5 | Idle timeout: 30s | Status: Ready</div>
         <div>[Pinecone] Namespace: user_8a7b9c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d</div>

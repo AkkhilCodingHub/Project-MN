@@ -4,17 +4,24 @@ import { triggerRazorpayWebhook } from '../services/api';
 
 export default function ProModal({ isOpen, onClose, onUpgradeSuccess }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!isOpen) return null;
 
   const handleSimulatePayment = async () => {
     setIsProcessing(true);
+    setErrorMessage('');
     try {
-      await triggerRazorpayWebhook();
-      onUpgradeSuccess();
-      onClose();
+      const verified = await triggerRazorpayWebhook();
+      if (verified) {
+        onUpgradeSuccess();
+        onClose();
+      } else {
+        setErrorMessage('Payment verification failed or backend unreachable.');
+      }
     } catch (err) {
       console.error(err);
+      setErrorMessage('Payment verification error.');
     } finally {
       setIsProcessing(false);
     }
@@ -42,6 +49,7 @@ export default function ProModal({ isOpen, onClose, onUpgradeSuccess }) {
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label="Close upgrade dialog"
           style={{
             position: 'absolute',
             top: '20px',
@@ -139,6 +147,12 @@ export default function ProModal({ isOpen, onClose, onUpgradeSuccess }) {
           <span>{isProcessing ? 'Verifying Webhook Signature...' : 'Upgrade Now (Razorpay Simulation)'}</span>
           <ArrowRight size={18} />
         </button>
+
+        {errorMessage && (
+          <p style={{ fontSize: '0.78rem', color: 'var(--alert-red)', textAlign: 'center', marginTop: '8px' }}>
+            ⚠️ {errorMessage}
+          </p>
+        )}
 
         <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center', marginTop: '12px' }}>
           🔒 Secured via Razorpay Webhook HMAC-SHA256 signature verification.

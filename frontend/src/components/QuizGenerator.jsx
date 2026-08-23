@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HelpCircle, CheckCircle, XCircle, Sparkles, RefreshCw, Trophy, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchQuiz } from '../services/api';
@@ -11,16 +11,26 @@ export default function QuizGenerator({ activeSubject }) {
   const [score, setScore] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
 
+  useEffect(() => {
+    setQuiz(null);
+    setSelectedOption(null);
+    setIsSubmitted(false);
+  }, [activeSubject]);
+
   const handleGenerateQuiz = async () => {
     setIsLoading(true);
     setSelectedOption(null);
     setIsSubmitted(false);
 
     try {
-      const data = await fetchQuiz();
-      setQuiz(data);
+      const data = await fetchQuiz(activeSubject);
+      if (data && Array.isArray(data.options) && typeof data.question === 'string') {
+        setQuiz(data);
+      } else {
+        console.error('Unexpected quiz payload structure:', data);
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Quiz generation error:', err);
     } finally {
       setIsLoading(false);
     }

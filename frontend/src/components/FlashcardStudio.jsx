@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, ChevronLeft, ChevronRight, RotateCcw, Check, Sparkles, RefreshCw } from 'lucide-react';
-import katex from 'katex';
+import { renderSafeMathHtml } from '../utils/renderMath';
 import { fetchFlashcards } from '../services/api';
 
 export default function FlashcardStudio({ activeSubject }) {
@@ -18,10 +18,11 @@ export default function FlashcardStudio({ activeSubject }) {
     setIsLoading(true);
     setIsFlipped(false);
     setCurrentIndex(0);
+    setMasteredIds(new Set());
 
     try {
-      const data = await fetchFlashcards();
-      setCards(data);
+      const data = await fetchFlashcards(activeSubject);
+      setCards(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,13 +40,17 @@ export default function FlashcardStudio({ activeSubject }) {
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
   };
 
+  const currentCard = cards[currentIndex];
+  const cardKey = currentCard?.id || currentCard?.front || String(currentIndex);
+
   const toggleMastered = () => {
+    if (!currentCard) return;
     setMasteredIds(prev => {
       const next = new Set(prev);
-      if (next.has(currentIndex)) {
-        next.delete(currentIndex);
+      if (next.has(cardKey)) {
+        next.delete(cardKey);
       } else {
-        next.add(currentIndex);
+        next.add(cardKey);
       }
       return next;
     });
@@ -54,19 +59,11 @@ export default function FlashcardStudio({ activeSubject }) {
   const renderMathText = (text) => {
     if (!text) return null;
     if (text.includes('$') || text.includes('\\')) {
-      try {
-        let htmlStr = text.replace(/\$(.*?)\$/g, (_, math) => {
-          return katex.renderToString(math, { displayMode: false, throwOnError: false });
-        });
-        return <span dangerouslySetInnerHTML={{ __html: htmlStr }} />;
-      } catch {
-        // fallback
-      }
+      const htmlStr = renderSafeMathHtml(text);
+      return <span dangerouslySetInnerHTML={{ __html: htmlStr }} />;
     }
     return text;
   };
-
-  const currentCard = cards[currentIndex];
 
   return (
     <div className="glass-panel" style={{
@@ -208,11 +205,11 @@ export default function FlashcardStudio({ activeSubject }) {
 
             <button
               onClick={toggleMastered}
-              className={`btn-ghost ${masteredIds.has(currentIndex) ? 'badge green' : ''}`}
+              className={`btn-ghost ${masteredIds.has(cardKey) ? 'badge green' : ''}`}
               style={{ padding: '8px 16px', fontSize: '0.8rem' }}
             >
-              <Check size={16} color={masteredIds.has(currentIndex) ? 'var(--neon-lime)' : 'var(--text-muted)'} />
-              <span>{masteredIds.has(currentIndex) ? 'Mastered!' : 'Mark as Mastered'}</span>
+              <Check size={16} color={masteredIds.has(cardKey) ? 'var(--neon-lime)' : 'var(--text-muted)'} />
+              <span>{masteredIds.has(cardKey) ? 'Mastered!' : 'Mark as Mastered'}</span>
             </button>
 
             <button onClick={handleNext} className="btn-ghost" style={{ borderRadius: '50%', padding: '10px' }}>

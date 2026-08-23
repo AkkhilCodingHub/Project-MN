@@ -148,6 +148,12 @@ ion-content::part(scroll)::before {
   50% { transform: scale(1.2); opacity: 0.6; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
 /* Glassmorphism Containers */
 .glass-panel {
   background: var(--card-bg);
